@@ -1,16 +1,16 @@
-package com.example.newsbot.delivery.solapi;
+package com.example.newsbot.delivery;
 
-import com.example.newsbot.delivery.MessageText;
 import com.example.newsbot.news.NewsArticle;
 import com.example.newsbot.news.NewsDigest;
 import com.example.newsbot.news.NewsSection;
 
 /**
- * 브랜드 메시지 텍스트형 본문을 만든다. 최대 길이를 넘지 않는 만큼만 기사를 담는다.
+ * 하루치 뉴스를 글자만으로 된 목록으로 만든다. 최대 길이를 넘지 않는 만큼만 기사를 담는다.
+ * 브랜드 메시지 본문, 페이지의 "전체 복사" 내용에 쓴다.
  */
-public final class SolapiTextFormatter {
+public final class DigestTextFormatter {
 
-    private SolapiTextFormatter() {
+    private DigestTextFormatter() {
     }
 
     public record Result(String text, int includedArticles) {

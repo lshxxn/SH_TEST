@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.example.newsbot.delivery.DigestTextFormatter;
 import com.example.newsbot.delivery.NewsSender;
 import com.example.newsbot.news.NewsDigest;
 import org.slf4j.Logger;
@@ -60,7 +61,7 @@ public class SolapiBrandMessageSender implements NewsSender {
         if (recipients.isEmpty()) {
             throw new IllegalStateException("SOLAPI_RECIPIENTS 에 받는 사람 번호가 없습니다.");
         }
-        SolapiTextFormatter.Result body = SolapiTextFormatter.format(
+        DigestTextFormatter.Result body = DigestTextFormatter.format(
                 digest, properties.includeLinks(), properties.maxTextLength());
         if (body.includedArticles() < digest.articleCount()) {
             log.info("본문 길이 제한({}자) 때문에 기사 {}건 중 {}건만 담았습니다.",

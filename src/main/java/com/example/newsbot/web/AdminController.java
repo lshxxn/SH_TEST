@@ -1,5 +1,6 @@
 package com.example.newsbot.web;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import com.example.newsbot.job.DailyNewsJob;
 import com.example.newsbot.news.NewsDigest;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/news")
+@ConditionalOnProperty(name = "newsbot.site.enabled", havingValue = "false", matchIfMissing = true)
 public class AdminController {
 
     private final DailyNewsJob job;

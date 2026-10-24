@@ -1,0 +1,68 @@
+name: 매일 아침 뉴스 페이지
+
+on:
+  schedule:
+    # GitHub 예약 실행은 UTC 기준입니다. 23:37 UTC = 한국 시간 오전 8시 37분.
+    # 예약 실행은 몇 분 늦게 시작될 수 있어서 9시보다 조금 일찍 잡았습니다.
+    - cron: "37 23 * * *"
+  # Actions 화면에서 [Run workflow] 버튼으로 지금 바로 실행할 수도 있습니다.
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-news-page
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      LANG: C.UTF-8
+      TZ: Asia/Seoul
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: 프로그램 빌드
+        run: ./mvnw -B -q -DskipTests package
+
+      - name: 뉴스 모아서 페이지 만들기
+        env:
+          NEWSBOT_CHANNEL_URL: ${{ vars.KAKAO_CHANNEL_URL }}
+          NEWSBOT_SITE_OUTPUT_DIR: ${{ runner.temp }}/site
+        run: |
+          export NEWSBOT_SITE_PAGE_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/"
+          java -jar target/kakao-news-bot-0.1.0.jar --spring.profiles.active=site
+
+      - name: gh-pages 브랜치에 올리기
+        env:
+          SITE_DIR: ${{ runner.temp }}/site
+          PAGES_DIR: ${{ runner.temp }}/pages
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git fetch --depth 1 origin gh-pages; then
+            git worktree add --detach "$PAGES_DIR" FETCH_HEAD
+            cd "$PAGES_DIR"
+            git switch -c gh-pages
+          else
+            git worktree add --orphan -b gh-pages "$PAGES_DIR"
+            cd "$PAGES_DIR"
+          fi
+          cp -a "$SITE_DIR"/. .
+          git add -A
+          if git diff --cached --quiet; then
+            echo "바뀐 내용이 없습니다."
+            exit 0
+          fi
+          git commit -q -m "오늘의 뉴스 $(date +%F)"
+          git push origin HEAD:gh-pages

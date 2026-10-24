@@ -1,5 +1,6 @@
 package com.example.newsbot.delivery.solapi;
 
+import com.example.newsbot.delivery.DigestTextFormatter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
@@ -94,7 +95,7 @@ class SolapiBrandMessageSenderTest {
                 .toList();
         NewsDigest digest = new NewsDigest(LocalDate.of(2026, 10, 24), List.of(new NewsSection("주요 뉴스", many)));
 
-        SolapiTextFormatter.Result result = SolapiTextFormatter.format(digest, true, 1300);
+        DigestTextFormatter.Result result = DigestTextFormatter.format(digest, true, 1300);
 
         assertThat(result.text().codePointCount(0, result.text().length())).isLessThanOrEqualTo(1300);
         assertThat(result.includedArticles()).isBetween(1, 29);

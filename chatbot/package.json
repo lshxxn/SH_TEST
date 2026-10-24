@@ -1,0 +1,8 @@
+{
+  "name": "kakao-news-chatbot",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}

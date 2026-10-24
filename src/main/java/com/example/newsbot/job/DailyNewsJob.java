@@ -1,5 +1,6 @@
 package com.example.newsbot.job;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component;
  * 매일 정해진 시각(기본: 한국 시간 오전 9시)에 뉴스를 모아 켜져 있는 모든 발송 채널로 보낸다.
  */
 @Component
+@ConditionalOnProperty(name = "newsbot.site.enabled", havingValue = "false", matchIfMissing = true)
 public class DailyNewsJob {
 
     private static final Logger log = LoggerFactory.getLogger(DailyNewsJob.class);

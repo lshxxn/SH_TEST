@@ -22,6 +22,24 @@
 
 ---
 
+## 0. 무료로 시작하기: 뉴스 페이지 + 채널 챗봇
+
+사업자등록 없이, 비용 없이 쓸 수 있는 방식입니다.
+
+1. **매일 아침 뉴스 페이지**: GitHub Actions 가 매일 08:37(한국 시간)에 뉴스를 모아
+   `gh-pages` 브랜치에 `index.html`(페이지)과 `news.json`(챗봇용 데이터)을 올립니다.
+   GitHub Pages 가 이것을 `https://<아이디>.github.io/<저장소>/` 주소로 보여 줍니다.
+   - 설정 파일: `.github/workflows/daily-news-page.yml`
+   - 지금 바로 다시 만들기: GitHub 저장소 > Actions > "매일 아침 뉴스 페이지" > Run workflow
+   - 페이지에 "채널 추가" 버튼을 넣으려면 저장소 Settings > Secrets and variables > Actions > Variables 에
+     `KAKAO_CHANNEL_URL` = `https://pf.kakao.com/_채널주소` 를 추가합니다.
+2. **채널 챗봇**: 카카오 챗봇 관리자센터에서 만든 봇을 채널에 연결합니다.
+   - 간단 버전: 봇 응답에 "오늘의 뉴스 보기" 링크 버튼(위 페이지 주소)을 넣습니다.
+   - 기사 목록 버전: `chatbot/worker.js` 를 Cloudflare Workers(무료)에 올리고, 그 주소를 챗봇의 스킬로 등록합니다.
+     친구가 "정치", "경제" 처럼 말하면 해당 분야 기사 5개를 카드로 답합니다. 테스트: `cd chatbot && node --test`
+
+---
+
 ## 1. 카카오톡 채널 만들기
 
 1. [카카오톡 채널 관리자센터](https://center-pf.kakao.com)에 카카오 계정으로 로그인합니다.

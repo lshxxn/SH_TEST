@@ -22,14 +22,24 @@ newsbot:
     sections:
       - name: 주요 뉴스
         rss: https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko
+      - name: 정치
+        keyword: 정치          # 키워드 → 구글 뉴스 최근 1일 검색
       - name: 경제
         rss: https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=ko&gl=KR&ceid=KR:ko
-      # 키워드로 구독하려면 (구글 뉴스 최근 1일 검색 결과)
-      # - name: AI
-      #   keyword: 인공지능
+      - name: 국제
+        rss: https://news.google.com/rss/headlines/section/topic/WORLD?hl=ko&gl=KR&ceid=KR:ko
+      - name: IT·과학
+        rss: https://news.google.com/rss/headlines/section/topic/TECHNOLOGY?hl=ko&gl=KR&ceid=KR:ko
       # 언론사 RSS 주소를 직접 넣어도 됩니다
       # - name: 언론사 이름
       #   rss: https://언론사-RSS-주소
+
+  # 매일 아침 만드는 뉴스 페이지 (GitHub Pages) 와 챗봇용 news.json
+  site:
+    title: 오늘의 뉴스 클리핑
+    page-url: ${NEWSBOT_SITE_PAGE_URL:}
+    channel-url: ${NEWSBOT_CHANNEL_URL:}
+    output-dir: ${NEWSBOT_SITE_OUTPUT_DIR:_site}
 
   # ① 나에게 보내기 (무료, 본인 카카오톡 '나와의 채팅'으로 수신)
   kakao:

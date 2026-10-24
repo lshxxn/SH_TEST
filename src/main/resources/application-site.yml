@@ -1,0 +1,15 @@
+# 뉴스 페이지 생성 모드: java -jar app.jar --spring.profiles.active=site
+# 뉴스를 모아 _site/index.html, _site/news.json 을 만들고 바로 종료한다.
+spring:
+  main:
+    web-application-type: none
+
+newsbot:
+  schedule:
+    enabled: false
+  kakao:
+    enabled: false
+  solapi:
+    enabled: false
+  site:
+    enabled: true
