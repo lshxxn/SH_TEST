@@ -11,5 +11,7 @@ newsbot:
     enabled: false
   solapi:
     enabled: false
+  chatbot:
+    enabled: false
   site:
     enabled: true

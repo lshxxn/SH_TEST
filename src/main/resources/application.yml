@@ -34,7 +34,15 @@ newsbot:
       # - name: 언론사 이름
       #   rss: https://언론사-RSS-주소
 
-  # 매일 아침 만드는 뉴스 페이지 (GitHub Pages) 와 챗봇용 news.json
+  # 카카오톡 채널 챗봇 (카카오 i 오픈빌더 스킬 서버)
+  # 스킬 URL: https://<터널 주소>/kakao/skill/news
+  chatbot:
+    enabled: ${NEWSBOT_CHATBOT_ENABLED:true}
+    max-items: 5          # 카드에 넣을 기사 수 (최대 5)
+    cache-ttl: 5m         # 같은 분야를 5분 안에 다시 물으면 방금 가져온 결과 사용
+    skill-token: ${NEWSBOT_SKILL_TOKEN:}   # 설정하면 스킬 URL 끝에 ?token=값 을 붙여야 응답
+
+  # (선택) 정적 뉴스 페이지 생성: --spring.profiles.active=site
   site:
     title: 오늘의 뉴스 클리핑
     page-url: ${NEWSBOT_SITE_PAGE_URL:}
@@ -43,7 +51,7 @@ newsbot:
 
   # ① 나에게 보내기 (무료, 본인 카카오톡 '나와의 채팅'으로 수신)
   kakao:
-    enabled: ${KAKAO_ENABLED:true}
+    enabled: ${KAKAO_ENABLED:false}
     rest-api-key: ${KAKAO_REST_API_KEY:}
     client-secret: ${KAKAO_CLIENT_SECRET:}
     redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:8080/kakao/callback}

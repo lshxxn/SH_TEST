@@ -1,0 +1,13 @@
+{
+  "intent": { "id": "intent-1", "name": "정치 뉴스" },
+  "userRequest": {
+    "timezone": "Asia/Seoul",
+    "params": { "ignoreMe": "true" },
+    "block": { "id": "block-1", "name": "정치 뉴스" },
+    "utterance": "정치",
+    "lang": "ko",
+    "user": { "id": "user-1", "type": "botUserKey", "properties": {} }
+  },
+  "bot": { "id": "bot-1", "name": "뉴스봇" },
+  "action": { "name": "뉴스", "clientExtra": null, "params": {}, "id": "action-1", "detailParams": {} }
+}

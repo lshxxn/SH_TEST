@@ -48,25 +48,33 @@ public class NewsCollector {
                 log.warn("섹션 '{}' 피드를 가져오지 못했습니다: {}", section.displayName(), e.getMessage());
                 continue;
             }
-            List<NewsArticle> picked = new ArrayList<>();
-            for (NewsArticle article : fetched) {
-                if (picked.size() >= news.maxItemsPerSection()) {
-                    break;
-                }
-                if (article.publishedAt() != null && article.publishedAt().isBefore(cutoff)) {
-                    continue;
-                }
-                if (!seen.add(dedupKey(article))) {
-                    continue;
-                }
-                picked.add(article);
-            }
+            List<NewsArticle> picked = pick(fetched, cutoff, news.maxItemsPerSection(), seen);
             log.info("섹션 '{}': {}건 중 {}건 선택", section.displayName(), fetched.size(), picked.size());
             if (!picked.isEmpty()) {
                 sections.add(new NewsSection(section.displayName(), picked));
             }
         }
         return new NewsDigest(LocalDate.now(clock.withZone(properties.schedule().zone())), sections);
+    }
+
+    /**
+     * 기한(cutoff)보다 오래된 기사와 이미 나온 기사(seen)를 빼고 앞에서부터 max 건을 고른다.
+     */
+    public static List<NewsArticle> pick(List<NewsArticle> fetched, Instant cutoff, int max, Set<String> seen) {
+        List<NewsArticle> picked = new ArrayList<>();
+        for (NewsArticle article : fetched) {
+            if (picked.size() >= max) {
+                break;
+            }
+            if (article.publishedAt() != null && article.publishedAt().isBefore(cutoff)) {
+                continue;
+            }
+            if (!seen.add(dedupKey(article))) {
+                continue;
+            }
+            picked.add(article);
+        }
+        return picked;
     }
 
     private List<NewsArticle> fetch(URI uri) {

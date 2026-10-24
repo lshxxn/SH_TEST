@@ -30,7 +30,7 @@ public class DailyNewsJob {
         this.collector = collector;
         this.senders = senders;
         if (senders.isEmpty()) {
-            log.warn("켜져 있는 발송 채널이 없습니다. KAKAO_ENABLED 또는 SOLAPI_ENABLED 를 확인하세요.");
+            log.info("정기 발송 채널이 꺼져 있습니다. 정기 발송을 하려면 KAKAO_ENABLED 또는 SOLAPI_ENABLED 를 켜세요.");
         } else {
             log.info("발송 채널: {}", senders.stream().map(NewsSender::name).toList());
         }
@@ -41,6 +41,9 @@ public class DailyNewsJob {
 
     @Scheduled(cron = "${newsbot.schedule.cron:0 0 9 * * *}", zone = "${newsbot.schedule.zone:Asia/Seoul}")
     public void runScheduled() {
+        if (senders.isEmpty()) {
+            return; // 챗봇만 쓰는 경우: 정기 발송할 곳이 없다
+        }
         log.info("정기 뉴스 발송 시작");
         run();
     }

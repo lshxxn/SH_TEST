@@ -22,21 +22,32 @@
 
 ---
 
-## 0. 무료로 시작하기: 뉴스 페이지 + 채널 챗봇
+## 0. 무료로 시작하기: 내 컴퓨터 + 카카오톡 채널 챗봇
 
-사업자등록 없이, 비용 없이 쓸 수 있는 방식입니다.
+친구가 챗봇에서 분야(정치, 경제 등)를 고르면 그 순간 내 컴퓨터의 프로그램이 뉴스를 가져와
+기사 5개를 카드로 답합니다. 사업자등록과 비용이 필요 없습니다.
 
-1. **매일 아침 뉴스 페이지**: GitHub Actions 가 매일 08:37(한국 시간)에 뉴스를 모아
-   `gh-pages` 브랜치에 `index.html`(페이지)과 `news.json`(챗봇용 데이터)을 올립니다.
-   GitHub Pages 가 이것을 `https://<아이디>.github.io/<저장소>/` 주소로 보여 줍니다.
-   - 설정 파일: `.github/workflows/daily-news-page.yml`
-   - 지금 바로 다시 만들기: GitHub 저장소 > Actions > "매일 아침 뉴스 페이지" > Run workflow
-   - 페이지에 "채널 추가" 버튼을 넣으려면 저장소 Settings > Secrets and variables > Actions > Variables 에
-     `KAKAO_CHANNEL_URL` = `https://pf.kakao.com/_채널주소` 를 추가합니다.
-2. **채널 챗봇**: 카카오 챗봇 관리자센터에서 만든 봇을 채널에 연결합니다.
-   - 간단 버전: 봇 응답에 "오늘의 뉴스 보기" 링크 버튼(위 페이지 주소)을 넣습니다.
-   - 기사 목록 버전: `chatbot/worker.js` 를 Cloudflare Workers(무료)에 올리고, 그 주소를 챗봇의 스킬로 등록합니다.
-     친구가 "정치", "경제" 처럼 말하면 해당 분야 기사 5개를 카드로 답합니다. 테스트: `cd chatbot && node --test`
+```
+친구 → 카카오 챗봇(오픈빌더) → ngrok 주소 → 내 컴퓨터 :8080/kakao/skill/news → 구글 뉴스 RSS
+```
+
+1. **Java 21 설치**: https://adoptium.net 에서 Temurin 21 (JDK) 설치
+2. **챗봇 서버 켜기**: 윈도우는 `start-chatbot.bat` 더블클릭, 맥은 터미널에서 `./start-chatbot.sh`
+   - 확인: 브라우저에서 http://localhost:8080/kakao/skill/news → "뉴스 챗봇 스킬 서버가 동작 중입니다."
+3. **ngrok 으로 공개 주소 받기**: https://ngrok.com 무료 가입 → 설치 → 인증 토큰 등록 → `ngrok http 8080`
+   - 화면의 `Forwarding` 주소(`https://....ngrok-free.dev`)는 무료 계정에 고정으로 주어지는 주소입니다.
+4. **챗봇 관리자센터 설정**
+   - [스킬] 새 스킬 → URL: `https://....ngrok-free.dev/kakao/skill/news`
+   - [시나리오] 분야별 블록(정치, 경제, 국제, IT·과학, 주요 뉴스) → 사용자 발화에 분야 이름 → 스킬 선택 → 봇 응답 "스킬데이터 사용"
+   - 웰컴 블록에도 같은 스킬 → 분야 선택 버튼이 나옵니다
+   - [봇 테스트]로 확인 후 [배포]
+
+동작 방식
+- 분야는 블록 파라미터 `category` → 보낸 말 → 블록 이름 순서로 찾습니다. 분야 이름은 `newsbot.news.sections` 의 `name` 입니다.
+- 카카오는 5초 안에 답을 받아야 해서, 뉴스 서버 연결 1.5초·응답 2.5초에서 끊고 안내 문구로 답합니다.
+- 같은 분야를 5분 안에 다시 물으면 방금 가져온 결과를 씁니다 (`newsbot.chatbot.cache-ttl`).
+- 아무나 스킬 주소를 부르지 못하게 하려면 `NEWSBOT_SKILL_TOKEN` 을 정하고 스킬 URL 끝에 `?token=값` 을 붙입니다.
+- 컴퓨터와 ngrok 이 켜져 있는 동안에만 챗봇이 답합니다.
 
 ---
 
@@ -74,6 +85,7 @@
 
 ```bash
 export NEWSBOT_ADMIN_TOKEN=$(openssl rand -hex 24)   # 관리용 토큰. 값을 따로 적어 두세요
+export KAKAO_ENABLED=true                             # 나에게 보내기 켜기 (기본은 꺼짐)
 export KAKAO_REST_API_KEY=발급받은_REST_API_키
 export KAKAO_CLIENT_SECRET=클라이언트_시크릿          # 사용하지 않으면 생략
 
@@ -119,8 +131,6 @@ export SOLAPI_API_KEY=...
 export SOLAPI_API_SECRET=...
 export SOLAPI_PF_ID=KA01PF...
 export SOLAPI_RECIPIENTS=01011112222,01033334444
-# 나에게 보내기는 끄고 채널 발송만 하려면
-export KAKAO_ENABLED=false
 ```
 
 - 발송 형식은 솔라피 공식 SDK 예제의 `BMS_FREE` + `TEXT` 와 같습니다. 검수 없이 바로 보낼 수 있는 자유형입니다.
@@ -227,6 +237,8 @@ src/main/java/com/example/newsbot
 │   ├── NewsSender.java              # 발송 채널 인터페이스
 │   ├── kakao/                       # ① 나에게 보내기 + OAuth 토큰 관리
 │   └── solapi/                      # ② 브랜드 메시지 (HMAC 인증)
+├── chatbot/                         # 카카오 챗봇 스킬 서버 (분야별 뉴스 5건)
+├── site/                            # (선택) 정적 뉴스 페이지 생성
 ├── job/DailyNewsJob.java            # 매일 09:00 실행
 └── web/                             # 관리용 API (미리보기, 즉시 발송)
 ```
