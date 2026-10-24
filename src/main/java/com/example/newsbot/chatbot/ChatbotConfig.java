@@ -1,5 +1,6 @@
 package com.example.newsbot.chatbot;
 
+import java.nio.file.Path;
 import java.time.Clock;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -7,6 +8,7 @@ import java.util.concurrent.Executors;
 import com.example.newsbot.ai.ChatMemory;
 import com.example.newsbot.ai.GeminiClient;
 import com.example.newsbot.ai.GeminiProperties;
+import com.example.newsbot.ai.GeminiStatus;
 import com.example.newsbot.config.NewsBotProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +17,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.env.Environment;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -54,37 +57,48 @@ public class ChatbotConfig {
                 news, chatCallbackExecutor, newsBotRestClientBuilder.clone().build(), jsonMapper, clock);
     }
 
-    /** 프로그램이 켜지면 제미나이 키와 모델을 확인해 결과를 화면(로그)에 알려 준다. */
     @Bean
-    GeminiStartupCheck geminiStartupCheck(GeminiProperties gemini, GeminiClient geminiClient,
-                                          ExecutorService chatCallbackExecutor) {
-        return new GeminiStartupCheck(gemini, geminiClient, chatCallbackExecutor);
+    GeminiStatus geminiStatus(GeminiProperties gemini, GeminiClient geminiClient, Clock clock) {
+        return new GeminiStatus(gemini, geminiClient, Path.of(""), clock);
     }
 
-    static final class GeminiStartupCheck {
-        private final GeminiProperties gemini;
-        private final GeminiClient client;
-        private final ExecutorService executor;
+    /** 프로그램이 켜지면 눈에 띄는 안내 상자로 준비 상태를 알려 준다. */
+    @Bean
+    StartupBanner startupBanner(GeminiStatus geminiStatus, Environment environment) {
+        return new StartupBanner(geminiStatus, environment);
+    }
 
-        GeminiStartupCheck(GeminiProperties gemini, GeminiClient client, ExecutorService executor) {
-            this.gemini = gemini;
-            this.client = client;
-            this.executor = executor;
+    static final class StartupBanner {
+        private final GeminiStatus status;
+        private final Environment environment;
+
+        StartupBanner(GeminiStatus status, Environment environment) {
+            this.status = status;
+            this.environment = environment;
         }
 
         @EventListener(ApplicationReadyEvent.class)
-        void check() {
-            if (!gemini.configured()) {
-                log.info("제미나이: GEMINI_API_KEY 가 없어 AI 대화는 꺼져 있습니다. (secrets.properties 에 넣으면 켜집니다)");
-                return;
+        void show() {
+            String port = environment.getProperty("local.server.port", environment.getProperty("server.port", "8080"));
+            GeminiStatus.Result gemini = status.check();
+            String mark = switch (gemini.state()) {
+                case OK -> "[정상]";
+                case NO_KEY -> "[꺼짐]";
+                case FAILED -> "[문제]";
+            };
+            String line = "=".repeat(60);
+            String banner = String.join(System.lineSeparator(),
+                    "", line,
+                    "  뉴스 챗봇 서버가 켜졌습니다",
+                    "  - 뉴스 스킬     http://localhost:" + port + "/kakao/skill/news",
+                    "  - AI 대화 스킬  http://localhost:" + port + "/kakao/skill/chat",
+                    "  - 제미나이 " + mark + " " + gemini.message(),
+                    line, "");
+            if (gemini.state() == GeminiStatus.State.OK) {
+                log.info(banner);
+            } else {
+                log.warn(banner);
             }
-            executor.execute(() -> {
-                try {
-                    log.info("제미나이 연결 확인 완료: {} ({})", client.checkModel(), gemini.modelName());
-                } catch (RuntimeException e) {
-                    log.warn("제미나이 연결 확인 실패: {}", e.getMessage());
-                }
-            });
         }
     }
 }

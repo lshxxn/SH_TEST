@@ -3,6 +3,7 @@ package com.example.newsbot.chatbot;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+import com.example.newsbot.ai.GeminiStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -31,10 +32,12 @@ public class ChatSkillController {
 
     private final ChatSkillService service;
     private final SkillTokenGuard guard;
+    private final GeminiStatus geminiStatus;
 
-    public ChatSkillController(ChatSkillService service, SkillTokenGuard guard) {
+    public ChatSkillController(ChatSkillService service, SkillTokenGuard guard, GeminiStatus geminiStatus) {
         this.service = service;
         this.guard = guard;
+        this.geminiStatus = geminiStatus;
     }
 
     @PostMapping(path = "/chat", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -52,6 +55,8 @@ public class ChatSkillController {
 
     @GetMapping("/chat")
     public ResponseEntity<String> health() {
-        return ResponseEntity.ok().contentType(TEXT_UTF8).body("AI 대화 스킬 서버가 동작 중입니다.");
+        GeminiStatus.Result status = geminiStatus.current();
+        return ResponseEntity.ok().contentType(TEXT_UTF8)
+                .body("AI 대화 스킬 서버가 동작 중입니다.\n제미나이 상태: " + status.message());
     }
 }

@@ -27,6 +27,23 @@ public record GeminiProperties(
         @DefaultValue("30m") Duration historyTtl,
         String systemPrompt) {
 
+    public GeminiProperties {
+        apiKey = clean(apiKey);
+        model = clean(model);
+    }
+
+    /** 복사·붙여넣기 실수로 붙은 앞뒤 공백과 따옴표를 지운다. */
+    static String clean(String value) {
+        if (value == null) {
+            return null;
+        }
+        String v = value.strip();
+        while (v.length() >= 2 && ((v.startsWith("\"") && v.endsWith("\"")) || (v.startsWith("'") && v.endsWith("'")))) {
+            v = v.substring(1, v.length() - 1).strip();
+        }
+        return v;
+    }
+
     public boolean configured() {
         return apiKey != null && !apiKey.isBlank();
     }

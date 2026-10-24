@@ -39,8 +39,10 @@
 2. **제미나이 키 넣기**: `secrets.properties.example` 을 복사해 이름을 `secrets.properties` 로 바꾸고
    `GEMINI_API_KEY=` 뒤에 키를 붙여 넣습니다. 이 파일은 GitHub 에 올라가지 않습니다.
 3. **챗봇 서버 켜기**: 윈도우는 `start-chatbot.bat` 더블클릭, 맥은 터미널에서 `sh start-chatbot.sh`
-   - 화면에 `제미나이 연결 확인 완료` 가 나오면 키가 맞습니다.
-   - 확인: 브라우저에서 http://localhost:8080/kakao/skill/news
+   - 켜지면 `=====` 로 둘러싼 안내 상자가 나옵니다. `제미나이 [정상]` 이면 키가 맞습니다.
+     `[꺼짐]` 이나 `[문제]` 면 같은 줄에 고칠 곳이 적혀 있습니다.
+   - 브라우저에서 http://localhost:8080/kakao/skill/chat 을 열어도 제미나이 상태를 볼 수 있습니다.
+   - 메모장이 `secrets.properties.txt` 로 저장해도 읽습니다. 키 앞뒤의 따옴표와 공백은 자동으로 지웁니다.
 4. **ngrok 으로 공개 주소 받기**: https://ngrok.com 무료 가입 → 설치 → 인증 토큰 등록 → `ngrok http 8080`
    - 화면의 `Forwarding` 주소(`https://....ngrok-free.dev`)는 무료 계정에 고정으로 주어집니다.
 

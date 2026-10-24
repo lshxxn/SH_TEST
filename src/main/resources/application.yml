@@ -3,7 +3,10 @@ spring:
     name: kakao-news-bot
   config:
     # API 키 같은 비밀 값은 이 파일에 둡니다 (GitHub 에 올라가지 않음). 예시: secrets.properties.example
-    import: optional:file:./secrets.properties
+    # 윈도우 메모장이 이름 끝에 .txt 를 붙여 저장한 경우도 읽는다.
+    import:
+      - optional:file:./secrets.properties
+      - optional:file:./secrets.properties.txt[.properties]
 
 server:
   port: ${PORT:8080}
