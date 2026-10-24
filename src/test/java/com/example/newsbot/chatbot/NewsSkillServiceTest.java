@@ -99,6 +99,34 @@ class NewsSkillServiceTest {
     }
 
     @Test
+    void 리스트_카드는_카카오_글자_수_규격을_지킨다() throws IOException {
+        String longTitle = "이것은 아주 길어서 카카오 리스트 카드 제목 제한을 훌쩍 넘어가는 기사 제목입니다 정말로";
+        String rss = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?><rss version=\"2.0\"><channel><title>정치 - Google 뉴스</title>"
+                + "<link>https://news.google.com/</link>"
+                + "<item><title>" + longTitle + " - 매일경제 매경닷컴 프리미엄</title><link>https://n/1</link>"
+                + "<pubDate>Fri, 23 Oct 2026 23:00:00 GMT</pubDate></item>"
+                + "<item><title>짧은 제목 - 연합뉴스</title><link>https://n/2</link></item>"
+                + "<item><title>출처 없는 긴 제목 가나다라마바사아자차카타파하 가나다라마바사아자차카타파하</title><link>https://n/3</link></item>"
+                + "</channel></rss>");
+        server.expect(requestTo(POLITICS_RSS)).andRespond(withSuccess(rss.getBytes(java.nio.charset.StandardCharsets.UTF_8), MediaType.APPLICATION_XML));
+
+        JsonNode card = json.valueToTree(service.reply(payload())).at("/template/outputs/0/listCard");
+
+        assertThat(length(card.at("/header/title").asString())).isLessThanOrEqualTo(15);
+        JsonNode first = card.at("/items/0");
+        assertThat(length(first.get("title").asString())).isLessThanOrEqualTo(30); // 자른 끝의 공백은 빼고 … 을 붙임
+        assertThat(first.get("title").asString()).endsWith("…");
+        assertThat(first.get("description").asString()).isEqualTo("매일경제 매경닷컴 프리미엄"); // 시간까지 넣으면 16자 초과 → 언론사만
+        assertThat(card.at("/items/1/description").asString()).isEqualTo("연합뉴스");
+        assertThat(length(card.at("/items/2/title").asString())).isLessThanOrEqualTo(30);
+        assertThat(card.at("/items/2/description").asString()).isEqualTo("정치 - Google 뉴스"); // 피드 제목이 출처
+    }
+
+    private static int length(String s) {
+        return s.codePointCount(0, s.length());
+    }
+
+    @Test
     void 분야를_모르면_분야_선택_버튼으로_답한다() throws IOException {
         ObjectNode welcome = payload();
         ((ObjectNode) welcome.get("userRequest")).put("utterance", "");

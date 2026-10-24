@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * 카카오 i 오픈빌더 스킬 주소: POST /kakao/skill/news
@@ -31,10 +33,12 @@ public class KakaoSkillController {
 
     private final NewsSkillService service;
     private final SkillTokenGuard guard;
+    private final JsonMapper jsonMapper;
 
-    public KakaoSkillController(NewsSkillService service, SkillTokenGuard guard) {
+    public KakaoSkillController(NewsSkillService service, SkillTokenGuard guard, JsonMapper jsonMapper) {
         this.service = service;
         this.guard = guard;
+        this.jsonMapper = jsonMapper;
     }
 
     @PostMapping(path = "/news", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -52,9 +56,17 @@ public class KakaoSkillController {
         return ResponseEntity.ok(reply);
     }
 
-    /** 브라우저로 주소를 열었을 때 서버가 살아 있는지 확인용 */
+    /**
+     * 브라우저 확인용. ?say=정치 를 붙이면 카카오에 보낼 응답 JSON 을 그대로 보여 준다.
+     */
     @GetMapping("/news")
-    public ResponseEntity<String> health() {
-        return ResponseEntity.ok().contentType(TEXT_UTF8).body("뉴스 챗봇 스킬 서버가 동작 중입니다.");
+    public ResponseEntity<?> health(@RequestParam(required = false) String say) {
+        if (say != null && !say.isBlank()) {
+            ObjectNode payload = jsonMapper.createObjectNode();
+            payload.putObject("userRequest").put("utterance", say);
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(service.reply(payload));
+        }
+        return ResponseEntity.ok().contentType(TEXT_UTF8)
+                .body("뉴스 챗봇 스킬 서버가 동작 중입니다.\n응답 미리보기: 주소 뒤에 ?say=정치 를 붙여 보세요.");
     }
 }

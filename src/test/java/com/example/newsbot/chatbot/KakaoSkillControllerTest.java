@@ -20,6 +20,7 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.client.RestClient;
+import tools.jackson.databind.json.JsonMapper;
 
 class KakaoSkillControllerTest {
 
@@ -59,17 +60,26 @@ class KakaoSkillControllerTest {
     }
 
     @Test
-    void 브라우저로_열면_동작_중이라고_알려_준다() throws Exception {
-        mvc(RestClient.builder(), null).perform(get("/kakao/skill/news"))
+    void 브라우저로_열면_동작_중이라고_알려_주고_say를_붙이면_응답을_미리_보여준다() throws Exception {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        server.expect(requestTo(NewsSkillServiceTest.POLITICS_RSS))
+                .andRespond(withSuccess(NewsSkillServiceTest.rss(2), MediaType.APPLICATION_XML));
+        MockMvc mvc = mvc(builder, "secret-1"); // 미리보기는 토큰 없이도 됨
+
+        mvc.perform(get("/kakao/skill/news"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("뉴스 챗봇 스킬 서버가 동작 중입니다."));
+                .andExpect(content().string(org.hamcrest.Matchers.startsWith("뉴스 챗봇 스킬 서버가 동작 중입니다.")));
+        mvc.perform(get("/kakao/skill/news").param("say", "정치"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.template.outputs[0].listCard.items.length()").value(2));
     }
 
     private MockMvc mvc(RestClient.Builder builder, String token) {
         ChatbotProperties chatbot = new ChatbotProperties(true, 5, Duration.ofMinutes(5),
                 Duration.ofMillis(1500), Duration.ofMillis(2500), token);
         NewsSkillService service = new NewsSkillService(NewsSkillServiceTest.properties(), chatbot, clock, builder.build());
-        return MockMvcBuilders.standaloneSetup(new KakaoSkillController(service, new SkillTokenGuard(token))).build();
+        return MockMvcBuilders.standaloneSetup(new KakaoSkillController(service, new SkillTokenGuard(token), JsonMapper.builder().build())).build();
     }
 
     private static String request() throws Exception {
