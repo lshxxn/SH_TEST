@@ -8,19 +8,31 @@ public class GeminiException extends RuntimeException {
     public enum Reason { TIMEOUT, RATE_LIMITED, BAD_KEY, MODEL_NOT_FOUND, BLOCKED, OTHER }
 
     private final Reason reason;
+    private final int status;
 
     public GeminiException(Reason reason, String message) {
+        this(reason, 0, message);
+    }
+
+    public GeminiException(Reason reason, int status, String message) {
         super(message);
         this.reason = reason;
+        this.status = status;
     }
 
     public GeminiException(Reason reason, String message, Throwable cause) {
         super(message, cause);
         this.reason = reason;
+        this.status = 0;
     }
 
     public Reason reason() {
         return reason;
+    }
+
+    /** HTTP 상태 코드. 네트워크 오류 등은 0 */
+    public int status() {
+        return status;
     }
 
     /** 카카오톡 친구에게 보여 줄 문구 */

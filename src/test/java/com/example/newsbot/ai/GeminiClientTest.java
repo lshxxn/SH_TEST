@@ -48,6 +48,7 @@ public class GeminiClientTest {
                 .andExpect(jsonPath("$.contents[1].role").value("model"))
                 .andExpect(jsonPath("$.contents[2].parts[0].text").value("금리가 뭐야?"))
                 .andExpect(jsonPath("$.generationConfig.maxOutputTokens").value(400))
+                .andExpect(jsonPath("$.generationConfig.thinkingConfig.thinkingLevel").value("MINIMAL"))
                 .andRespond(withSuccess("""
                         {"candidates":[{"content":{"role":"model","parts":[
                           {"text":"생각 중…","thought":true},
@@ -59,6 +60,43 @@ public class GeminiClientTest {
 
         server.verify();
         assertThat(answer).isEqualTo("금리는 돈을 빌릴 때 내는 이자의 비율이에요.");
+    }
+
+    @Test
+    void 모델이_생각_설정을_거부하면_다음_방식으로_바꾸고_기억한다() {
+        // Gemini 2.5 계열: thinkingLevel 은 거부, thinkingBudget 은 허용
+        server.expect(requestTo(URL))
+                .andExpect(jsonPath("$.generationConfig.thinkingConfig.thinkingLevel").value("MINIMAL"))
+                .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error\":{\"code\":400,\"message\":\"Thinking level is not supported for this model.\",\"status\":\"INVALID_ARGUMENT\"}}"));
+        server.expect(requestTo(URL))
+                .andExpect(jsonPath("$.generationConfig.thinkingConfig.thinkingBudget").value(0))
+                .andRespond(withSuccess("{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"첫 답\"}]}}]}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(URL))
+                .andExpect(jsonPath("$.generationConfig.thinkingConfig.thinkingBudget").value(0))
+                .andRespond(withSuccess("{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"둘째 답\"}]}}]}", MediaType.APPLICATION_JSON));
+
+        assertThat(client.generate(List.of(), "안녕", false)).isEqualTo("첫 답");
+        assertThat(client.generate(List.of(), "또 안녕", false)).isEqualTo("둘째 답"); // 바로 두 번째 방식 사용
+        server.verify();
+        assertThat(client.thinkingSetting()).isEqualTo("{thinkingBudget=0}");
+    }
+
+    @Test
+    void 생각_설정을_전혀_모르는_모델이면_설정_없이_보낸다() {
+        for (String rejected : List.of("thinkingLevel", "thinkingBudget")) {
+            server.expect(requestTo(URL))
+                    .andExpect(jsonPath("$.generationConfig.thinkingConfig." + rejected).exists())
+                    .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
+                            .body("{\"error\":{\"code\":400,\"message\":\"Unknown name \\\"thinkingConfig\\\"\",\"status\":\"INVALID_ARGUMENT\"}}"));
+        }
+        server.expect(requestTo(URL))
+                .andExpect(jsonPath("$.generationConfig.thinkingConfig").doesNotExist())
+                .andRespond(withSuccess("{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"답\"}]}}]}", MediaType.APPLICATION_JSON));
+
+        assertThat(client.generate(List.of(), "안녕", false)).isEqualTo("답");
+        server.verify();
+        assertThat(client.thinkingSetting()).startsWith("설정 없음");
     }
 
     @Test
@@ -101,6 +139,6 @@ public class GeminiClientTest {
 
     public static GeminiProperties properties(String key, String model) {
         return new GeminiProperties(key, model, "https://generativelanguage.googleapis.com",
-                Duration.ofMillis(3500), Duration.ofSeconds(45), 400, 0.7, 3, Duration.ofMinutes(30), "짧게 답해");
+                Duration.ofMillis(3500), Duration.ofSeconds(45), 400, true, 0.7, 3, Duration.ofMinutes(30), "짧게 답해");
     }
 }

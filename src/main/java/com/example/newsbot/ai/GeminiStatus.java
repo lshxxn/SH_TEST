@@ -20,6 +20,8 @@ public class GeminiStatus {
     }
 
     private static final Duration RECHECK_AFTER = Duration.ofSeconds(30);
+    /** 시험 응답이 이보다 느리면 경고 */
+    private static final long SLOW_MS = 3000;
     private static final Pattern FILLED_KEY = Pattern.compile("(?m)^\\s*GEMINI_API_KEY\\s*=\\s*\\S+");
 
     private final GeminiProperties properties;
@@ -51,7 +53,13 @@ public class GeminiStatus {
             result = new Result(State.NO_KEY, "키가 없습니다. " + secretsFileHint());
         } else {
             try {
-                result = new Result(State.OK, "연결 확인 완료: " + client.checkModel() + " (" + properties.modelName() + ")");
+                String model = client.checkModel();
+                long ms = client.warmUp();
+                String note = ms > SLOW_MS
+                        ? " ← 느립니다. 카카오 5초 제한에 걸릴 수 있으니 secrets.properties 에 GEMINI_MODEL=<더 빠른 모델> 을 넣어 보세요"
+                        : "";
+                result = new Result(State.OK, "연결 확인 완료: " + model + " (" + properties.modelName() + "), 시험 응답 "
+                        + String.format(java.util.Locale.ROOT, "%.1f", ms / 1000.0) + "초, 생각 단계: " + client.thinkingSetting() + note);
             } catch (GeminiException e) {
                 result = new Result(State.FAILED, "연결 확인 실패: " + reasonText(e));
             }

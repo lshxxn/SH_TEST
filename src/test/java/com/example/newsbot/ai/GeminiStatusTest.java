@@ -60,9 +60,13 @@ class GeminiStatusTest {
         RestClient.Builder builder = RestClient.builder().baseUrl("https://generativelanguage.googleapis.com");
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
         server.expect(requestTo(MODEL_URL)).andRespond(withSuccess("{\"displayName\":\"Gemini Flash-Lite\"}", MediaType.APPLICATION_JSON));
-        GeminiStatus ok = status("good-key", builder.build());
-        assertThat(ok.check()).isEqualTo(new GeminiStatus.Result(GeminiStatus.State.OK,
-                "연결 확인 완료: Gemini Flash-Lite (gemini-flash-lite-latest)"));
+        server.expect(requestTo(MODEL_URL + ":generateContent"))
+                .andRespond(withSuccess("{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"안녕하세요\"}]}}]}", MediaType.APPLICATION_JSON));
+        GeminiStatus.Result ok = status("good-key", builder.build()).check();
+        assertThat(ok.state()).isEqualTo(GeminiStatus.State.OK);
+        assertThat(ok.message()).startsWith("연결 확인 완료: Gemini Flash-Lite (gemini-flash-lite-latest), 시험 응답 ")
+                .contains("생각 단계: {thinkingLevel=MINIMAL}")
+                .doesNotContain("느립니다");
 
         server.reset();
         server.expect(requestTo(MODEL_URL)).andRespond(withStatus(HttpStatus.BAD_REQUEST)

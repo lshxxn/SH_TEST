@@ -19,7 +19,9 @@ public record GeminiProperties(
         @DefaultValue("3500ms") Duration timeout,
         /** 콜백이 있을 때: 카카오 콜백 주소 유효 시간보다 짧게 */
         @DefaultValue("45s") Duration callbackTimeout,
-        @DefaultValue("400") int maxOutputTokens,
+        @DefaultValue("300") int maxOutputTokens,
+        /** true 면 모델의 "생각(thinking)" 단계를 꺼서 빠르게 답하게 한다. 끄는 방법은 모델에 맞춰 자동으로 고른다 */
+        @DefaultValue("true") boolean disableThinking,
         @DefaultValue("0.7") double temperature,
         /** 친구별로 기억할 최근 대화 수 (질문+답 한 쌍이 1) */
         @DefaultValue("3") int historyTurns,

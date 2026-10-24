@@ -22,7 +22,17 @@ import tools.jackson.databind.json.JsonMapper;
  */
 public class GeminiClient {
 
+    /**
+     * 생각 단계를 끄는 설정 후보. 모델이 거부(400)하면 다음 후보로 넘어가고 그 결과를 기억한다.
+     * thinkingLevel 은 Gemini 3 이후, thinkingBudget 은 Gemini 2.5 계열, 마지막은 설정 없음.
+     */
+    static final List<Map<String, Object>> THINKING_CANDIDATES = List.of(
+            Map.of("thinkingLevel", "MINIMAL"),
+            Map.of("thinkingBudget", 0),
+            Map.of());
+
     private final GeminiProperties properties;
+    private volatile int thinkingCandidate;
     private final JsonMapper jsonMapper;
     private final RestClient fast;
     private final RestClient slow;
@@ -60,17 +70,60 @@ public class GeminiClient {
         }
         contents.add(content("user", question));
 
+        RestClient client = longWait ? slow : fast;
+        while (true) {
+            int candidate = thinkingCandidate;
+            try {
+                JsonNode response = call(client, jsonMapper.writeValueAsBytes(body(contents, candidate)));
+                return extractText(response);
+            } catch (GeminiException e) {
+                if (!isThinkingConfigRejected(e) || candidate >= THINKING_CANDIDATES.size() - 1) {
+                    throw e;
+                }
+                // 이 모델은 이 설정을 모른다 → 다음 후보로 (프로세스당 한 번만 일어난다)
+                thinkingCandidate = candidate + 1;
+            }
+        }
+    }
+
+    /** 현재 쓰는 생각 단계 설정 (상태 표시용) */
+    public String thinkingSetting() {
+        if (!properties.disableThinking()) {
+            return "모델 기본값";
+        }
+        Map<String, Object> c = THINKING_CANDIDATES.get(thinkingCandidate);
+        return c.isEmpty() ? "설정 없음(모델이 지원하지 않음)" : c.toString();
+    }
+
+    /** 짧은 질문으로 설정을 확정하고 걸린 시간(ms)을 돌려준다. 시작할 때 한 번 부른다. */
+    public long warmUp() {
+        long started = System.nanoTime();
+        generate(List.of(), "안녕", true);
+        return (System.nanoTime() - started) / 1_000_000;
+    }
+
+    private Map<String, Object> body(List<Map<String, Object>> contents, int candidate) {
         Map<String, Object> body = new LinkedHashMap<>();
         if (properties.systemPrompt() != null && !properties.systemPrompt().isBlank()) {
             body.put("systemInstruction", Map.of("parts", List.of(Map.of("text", properties.systemPrompt()))));
         }
         body.put("contents", contents);
-        body.put("generationConfig", Map.of(
-                "maxOutputTokens", properties.maxOutputTokens(),
-                "temperature", properties.temperature()));
+        Map<String, Object> generationConfig = new LinkedHashMap<>();
+        generationConfig.put("maxOutputTokens", properties.maxOutputTokens());
+        generationConfig.put("temperature", properties.temperature());
+        if (properties.disableThinking() && !THINKING_CANDIDATES.get(candidate).isEmpty()) {
+            generationConfig.put("thinkingConfig", THINKING_CANDIDATES.get(candidate));
+        }
+        body.put("generationConfig", generationConfig);
+        return body;
+    }
 
-        JsonNode response = call(longWait ? slow : fast, jsonMapper.writeValueAsBytes(body));
-        return extractText(response);
+    private static boolean isThinkingConfigRejected(GeminiException e) {
+        if (e.status() != 400 || e.reason() != GeminiException.Reason.OTHER) {
+            return false;
+        }
+        String m = e.getMessage().toLowerCase(java.util.Locale.ROOT);
+        return m.contains("thinking") || m.contains("unknown name") || m.contains("not supported") || m.contains("invalid_argument");
     }
 
     /** 키와 모델이 맞는지 확인한다 (GET /v1beta/models/{model}). 모델 표시 이름을 돌려준다. */
@@ -150,7 +203,7 @@ public class GeminiClient {
             hint = "";
         }
         String shortBody = body.length() > 300 ? body.substring(0, 300) + "…" : body;
-        return new GeminiException(reason, "제미나이 오류 (HTTP " + status + "): " + hint + " " + shortBody.replaceAll("\\s+", " "));
+        return new GeminiException(reason, status, "제미나이 오류 (HTTP " + status + "): " + hint + " " + shortBody.replaceAll("\\s+", " "));
     }
 
     private static Map<String, Object> content(String role, String text) {
