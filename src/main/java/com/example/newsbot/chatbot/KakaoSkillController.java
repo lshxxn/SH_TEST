@@ -1,7 +1,6 @@
 package com.example.newsbot.chatbot;
 
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -10,7 +9,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,17 +30,17 @@ public class KakaoSkillController {
     private static final MediaType TEXT_UTF8 = new MediaType("text", "plain", StandardCharsets.UTF_8);
 
     private final NewsSkillService service;
-    private final ChatbotProperties chatbot;
+    private final SkillTokenGuard guard;
 
-    public KakaoSkillController(NewsSkillService service, ChatbotProperties chatbot) {
+    public KakaoSkillController(NewsSkillService service, SkillTokenGuard guard) {
         this.service = service;
-        this.chatbot = chatbot;
+        this.guard = guard;
     }
 
     @PostMapping(path = "/news", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> news(@RequestBody(required = false) JsonNode payload,
                                                     @RequestParam(required = false) String token) {
-        if (!tokenOk(token)) {
+        if (!guard.allows(token)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         long started = System.nanoTime();
@@ -58,14 +56,5 @@ public class KakaoSkillController {
     @GetMapping("/news")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok().contentType(TEXT_UTF8).body("뉴스 챗봇 스킬 서버가 동작 중입니다.");
-    }
-
-    private boolean tokenOk(String token) {
-        String expected = chatbot.skillToken();
-        if (!StringUtils.hasText(expected)) {
-            return true;
-        }
-        return token != null && MessageDigest.isEqual(
-                expected.getBytes(StandardCharsets.UTF_8), token.getBytes(StandardCharsets.UTF_8));
     }
 }

@@ -69,7 +69,7 @@ class KakaoSkillControllerTest {
         ChatbotProperties chatbot = new ChatbotProperties(true, 5, Duration.ofMinutes(5),
                 Duration.ofMillis(1500), Duration.ofMillis(2500), token);
         NewsSkillService service = new NewsSkillService(NewsSkillServiceTest.properties(), chatbot, clock, builder.build());
-        return MockMvcBuilders.standaloneSetup(new KakaoSkillController(service, chatbot)).build();
+        return MockMvcBuilders.standaloneSetup(new KakaoSkillController(service, new SkillTokenGuard(token))).build();
     }
 
     private static String request() throws Exception {
