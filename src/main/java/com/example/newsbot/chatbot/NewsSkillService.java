@@ -113,6 +113,18 @@ public class NewsSkillService {
                 .findFirst();
     }
 
+    /** 보낸 말이 분야 이름 그대로인지 ("정치", "IT", "주요 뉴스"). 분야 버튼을 눌렀을 때가 여기에 해당한다. */
+    Optional<NewsBotProperties.Section> exact(String said) {
+        String normalized = said == null ? "" : said.replaceAll("\\s+", "").toLowerCase(Locale.ROOT);
+        if (normalized.isEmpty()) {
+            return Optional.empty();
+        }
+        return properties.news().sections().stream()
+                .filter(s -> normalized.equals(s.displayName().replaceAll("\\s+", "").toLowerCase(Locale.ROOT))
+                        || keywords(s.displayName()).contains(normalized))
+                .findFirst();
+    }
+
     private static List<String> keywords(String name) {
         return java.util.Arrays.stream(name.split("[·\\s/,]+"))
                 .map(t -> t.trim().toLowerCase(Locale.ROOT))

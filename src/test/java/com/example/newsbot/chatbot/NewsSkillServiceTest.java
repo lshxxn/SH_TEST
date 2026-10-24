@@ -65,6 +65,16 @@ class NewsSkillServiceTest {
     }
 
     @Test
+    void 분야_이름_그대로인_말만_정확히_일치로_본다() {
+        assertThat(service.exact("정치").orElseThrow().displayName()).isEqualTo("정치");
+        assertThat(service.exact("주요 뉴스").orElseThrow().displayName()).isEqualTo("주요 뉴스");
+        assertThat(service.exact("it").orElseThrow().displayName()).isEqualTo("IT·과학");
+        assertThat(service.exact("IT·과학").orElseThrow().displayName()).isEqualTo("IT·과학");
+        assertThat(service.exact("정치란 무엇인가")).isEmpty();
+        assertThat(service.exact("뉴스")).isEmpty();
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     void 분야를_고르면_뉴스를_가져와_5건짜리_리스트카드로_답한다() throws IOException {
         server.expect(requestTo(POLITICS_RSS)).andRespond(withSuccess(rss(7), MediaType.APPLICATION_XML));

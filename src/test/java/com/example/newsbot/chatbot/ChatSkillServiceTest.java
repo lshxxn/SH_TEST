@@ -80,6 +80,22 @@ class ChatSkillServiceTest {
     }
 
     @Test
+    void 분야_버튼을_누른_말은_뉴스_카드로_설명을_묻는_말은_제미나이로_간다() throws IOException {
+        ChatSkillService service = service(GeminiClientTest.properties("k", "gemini-flash-lite-latest"));
+        server.expect(requestTo(NewsSkillServiceTest.POLITICS_RSS))
+                .andRespond(withSuccess(NewsSkillServiceTest.rss(5), MediaType.APPLICATION_XML));
+        server.expect(requestTo(GeminiClientTest.URL))
+                .andRespond(withSuccess(geminiAnswer("정치는 …"), MediaType.APPLICATION_JSON));
+
+        JsonNode button = json.valueToTree(service.reply(payload("정치", null)));
+        JsonNode question = json.valueToTree(service.reply(payload("정치란 무엇인지 설명해 줘", null)));
+
+        server.verify();
+        assertThat(button.at("/template/outputs/0/listCard/header/title").asString()).isEqualTo("📰 정치 뉴스");
+        assertThat(question.at("/template/outputs/0/simpleText/text").asString()).isEqualTo("정치는 …");
+    }
+
+    @Test
     void 콜백이_켜져_있으면_먼저_기다려_달라고_하고_답은_콜백_주소로_보낸다() throws IOException {
         ChatSkillService service = service(GeminiClientTest.properties("k", "gemini-flash-lite-latest"));
         server.expect(requestTo(GeminiClientTest.URL))

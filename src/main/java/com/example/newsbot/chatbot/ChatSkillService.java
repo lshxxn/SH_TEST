@@ -26,7 +26,8 @@ import tools.jackson.databind.json.JsonMapper;
  * <ul>
  *   <li>블록에 콜백이 켜져 있으면: "생각하고 있어요"를 먼저 보내고, 답이 나오면 callbackUrl 로 보낸다.</li>
  *   <li>콜백이 없으면: 카카오 5초 제한 안에 바로 답한다. 늦으면 다시 물어 달라고 안내한다.</li>
- *   <li>"정치 뉴스" 처럼 뉴스를 찾는 말이면 제미나이 대신 뉴스 카드로 답한다.</li>
+ *   <li>분야 버튼("정치")이나 뉴스를 찾는 말("경제 뉴스")이면 제미나이 대신 뉴스 카드로 답한다.
+ *       그래서 관리자센터에는 웰컴 블록과 폴백 블록만 설정해도 된다.</li>
  * </ul>
  */
 public class ChatSkillService {
@@ -73,7 +74,8 @@ public class ChatSkillService {
             memory.forget(userId);
             return KakaoSkillResponses.text(RESET_TEXT, categories);
         }
-        if (looksLikeNewsRequest(compact) && news.resolve(payload).isPresent()) {
+        // 분야 버튼을 눌렀거나("정치") 뉴스를 찾는 말("경제 뉴스 보여줘")이면 제미나이 대신 뉴스 카드
+        if (news.exact(utterance).isPresent() || (looksLikeNewsRequest(compact) && news.resolve(payload).isPresent())) {
             return news.reply(payload);
         }
         if (!gemini.configured()) {

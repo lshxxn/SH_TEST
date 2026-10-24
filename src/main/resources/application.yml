@@ -8,6 +8,10 @@ spring:
       - optional:file:./secrets.properties
       - optional:file:./secrets.properties.txt[.properties]
 
+logging:
+  charset:
+    console: UTF-8   # 맥/윈도우 터미널에서 한글이 ???? 로 보이지 않도록
+
 server:
   port: ${PORT:8080}
   # 기본은 이 컴퓨터에서만 접속 가능. 외부에 열 이유가 없다면 그대로 두세요.
