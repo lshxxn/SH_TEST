@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>테크신문 전체기사</title>
+    <link>https://tech.example.com</link>
+    <item>
+      <title>반도체 수출 석 달 연속 증가</title>
+      <link>https://tech.example.com/1</link>
+      <pubDate>Sat, 24 Oct 2026 00:10:00 +0900</pubDate>
+    </item>
+    <item>
+      <title>새 스마트폰 공개 - 접는 화면</title>
+      <link>https://tech.example.com/2</link>
+    </item>
+  </channel>
+</rss>

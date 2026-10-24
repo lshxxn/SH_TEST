@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<rss xmlns:media="http://search.yahoo.com/mrss/" version="2.0">
+  <channel>
+    <generator>NFE/5.0</generator>
+    <title>주요 뉴스 - Google 뉴스</title>
+    <link>https://news.google.com/?hl=ko&amp;gl=KR&amp;ceid=KR:ko</link>
+    <language>ko</language>
+    <lastBuildDate>Sat, 24 Oct 2026 00:30:00 GMT</lastBuildDate>
+    <item>
+      <title>반도체 수출 석 달 연속 증가 - 연합뉴스</title>
+      <link>https://news.google.com/rss/articles/AAA?oc=5</link>
+      <guid isPermaLink="false">AAA</guid>
+      <pubDate>Fri, 23 Oct 2026 23:12:00 GMT</pubDate>
+      <description>&lt;a href="https://news.google.com/rss/articles/AAA?oc=5"&gt;반도체&lt;/a&gt;</description>
+      <source url="https://www.yna.co.kr">연합뉴스</source>
+    </item>
+    <item>
+      <title>"AI 기본법" 시행 앞두고 - 업계 준비 분주 - 한국경제</title>
+      <link>https://news.google.com/rss/articles/BBB?oc=5</link>
+      <pubDate>Fri, 23 Oct 2026 22:00:00 GMT</pubDate>
+      <source url="https://www.hankyung.com">한국경제</source>
+    </item>
+    <item>
+      <title>오래된 기사 - 어제신문</title>
+      <link>https://news.google.com/rss/articles/OLD?oc=5</link>
+      <pubDate>Mon, 19 Oct 2026 01:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>서울 아침 기온 5도 쌀쌀 - SBS</title>
+      <link>https://news.google.com/rss/articles/CCC?oc=5</link>
+      <pubDate>Sat, 24 Oct 2026 00:05:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>   </title>
+      <link>https://news.google.com/rss/articles/EMPTY</link>
+    </item>
+  </channel>
+</rss>

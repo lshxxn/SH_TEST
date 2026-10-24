@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: kakao-news-bot
+
+server:
+  port: ${PORT:8080}
+  # 기본은 이 컴퓨터에서만 접속 가능. 외부에 열 이유가 없다면 그대로 두세요.
+  address: ${SERVER_ADDRESS:127.0.0.1}
+
+newsbot:
+  # /api/news/*, /kakao/login 보호용. 길고 임의적인 값으로 설정하세요.
+  admin-token: ${NEWSBOT_ADMIN_TOKEN:}
+
+  schedule:
+    cron: "0 0 9 * * *"   # 초 분 시 일 월 요일 → 매일 09:00:00
+    zone: Asia/Seoul
+
+  news:
+    max-items-per-section: 5
+    lookback: 24h          # 24시간보다 오래된 기사는 제외
+    more-link: https://news.google.com/home?hl=ko&gl=KR&ceid=KR:ko
+    sections:
+      - name: 주요 뉴스
+        rss: https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko
+      - name: 경제
+        rss: https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=ko&gl=KR&ceid=KR:ko
+      # 키워드로 구독하려면 (구글 뉴스 최근 1일 검색 결과)
+      # - name: AI
+      #   keyword: 인공지능
+      # 언론사 RSS 주소를 직접 넣어도 됩니다
+      # - name: 언론사 이름
+      #   rss: https://언론사-RSS-주소
+
+  # ① 나에게 보내기 (무료, 본인 카카오톡 '나와의 채팅'으로 수신)
+  kakao:
+    enabled: ${KAKAO_ENABLED:true}
+    rest-api-key: ${KAKAO_REST_API_KEY:}
+    client-secret: ${KAKAO_CLIENT_SECRET:}
+    redirect-uri: ${KAKAO_REDIRECT_URI:http://localhost:8080/kakao/callback}
+    token-file: ${KAKAO_TOKEN_FILE:./data/kakao-token.json}
+
+  # ② 카카오톡 채널 → 채널 친구에게 브랜드 메시지 (사업자·비즈니스 채널·유료)
+  solapi:
+    enabled: ${SOLAPI_ENABLED:false}
+    api-key: ${SOLAPI_API_KEY:}
+    api-secret: ${SOLAPI_API_SECRET:}
+    pf-id: ${SOLAPI_PF_ID:}
+    from: ${SOLAPI_FROM:}
+    recipients: ${SOLAPI_RECIPIENTS:}   # 01011112222,01033334444
+    targeting: I
+    disable-sms: true
+    include-links: true
