@@ -33,17 +33,21 @@ public class ChatSkillController {
     private final ChatSkillService service;
     private final SkillTokenGuard guard;
     private final GeminiStatus geminiStatus;
+    private final RecentErrors recentErrors;
 
-    public ChatSkillController(ChatSkillService service, SkillTokenGuard guard, GeminiStatus geminiStatus) {
+    public ChatSkillController(ChatSkillService service, SkillTokenGuard guard, GeminiStatus geminiStatus,
+                               RecentErrors recentErrors) {
         this.service = service;
         this.guard = guard;
         this.geminiStatus = geminiStatus;
+        this.recentErrors = recentErrors;
     }
 
     @PostMapping(path = "/chat", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> chat(@RequestBody(required = false) JsonNode payload,
                                                     @RequestParam(required = false) String token) {
         if (!guard.allows(token)) {
+            log.warn("스킬 토큰이 맞지 않아 거부했습니다. 챗봇 관리자센터의 스킬 URL 끝에 ?token=값 이 있는지 확인하세요.");
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         long started = System.nanoTime();
@@ -57,6 +61,6 @@ public class ChatSkillController {
     public ResponseEntity<String> health() {
         GeminiStatus.Result status = geminiStatus.current();
         return ResponseEntity.ok().contentType(TEXT_UTF8)
-                .body("AI 대화 스킬 서버가 동작 중입니다.\n제미나이 상태: " + status.message());
+                .body("AI 대화 스킬 서버가 동작 중입니다.\n제미나이 상태: " + status.message() + "\n" + recentErrors.summary());
     }
 }

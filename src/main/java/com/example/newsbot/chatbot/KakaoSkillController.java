@@ -34,17 +34,21 @@ public class KakaoSkillController {
     private final NewsSkillService service;
     private final SkillTokenGuard guard;
     private final JsonMapper jsonMapper;
+    private final RecentErrors recentErrors;
 
-    public KakaoSkillController(NewsSkillService service, SkillTokenGuard guard, JsonMapper jsonMapper) {
+    public KakaoSkillController(NewsSkillService service, SkillTokenGuard guard, JsonMapper jsonMapper,
+                                RecentErrors recentErrors) {
         this.service = service;
         this.guard = guard;
         this.jsonMapper = jsonMapper;
+        this.recentErrors = recentErrors;
     }
 
     @PostMapping(path = "/news", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> news(@RequestBody(required = false) JsonNode payload,
                                                     @RequestParam(required = false) String token) {
         if (!guard.allows(token)) {
+            log.warn("스킬 토큰이 맞지 않아 거부했습니다. 챗봇 관리자센터의 스킬 URL 끝에 ?token=값 이 있는지 확인하세요.");
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         long started = System.nanoTime();
@@ -67,6 +71,6 @@ public class KakaoSkillController {
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(service.reply(payload));
         }
         return ResponseEntity.ok().contentType(TEXT_UTF8)
-                .body("뉴스 챗봇 스킬 서버가 동작 중입니다.\n응답 미리보기: 주소 뒤에 ?say=정치 를 붙여 보세요.");
+                .body("뉴스 챗봇 스킬 서버가 동작 중입니다.\n응답 미리보기: 주소 뒤에 ?say=정치 를 붙여 보세요.\n" + recentErrors.summary());
     }
 }

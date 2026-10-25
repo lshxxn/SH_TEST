@@ -33,6 +33,11 @@ public class ChatbotConfig {
     }
 
     @Bean
+    RecentErrors recentErrors(Clock clock, NewsBotProperties properties) {
+        return new RecentErrors(clock, properties.schedule().zone());
+    }
+
+    @Bean
     NewsSkillService newsSkillService(NewsBotProperties properties, ChatbotProperties chatbot, Clock clock,
                                       RestClient.Builder newsBotRestClientBuilder) {
         return new NewsSkillService(properties, chatbot, clock,

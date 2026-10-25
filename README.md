@@ -193,34 +193,46 @@ newsbot:
 
 ---
 
-## 5. 서버에 올려서 24시간 돌리기
+## 5. 서버 계속 켜 두기
 
-정해진 시각에 보내려면 앱이 계속 켜져 있어야 합니다. 리눅스 서버(클라우드 VM 등) 기준 예시입니다.
+챗봇은 스프링 서버와 ngrok 이 켜져 있는 동안만 답합니다. 꺼져 있으면 챗봇 관리자센터에
+"스킬 서버 연결 오류 (1002)" 가 쌓입니다.
+
+### 방법 A. 맥에서 자동 실행 (추천, 5분)
+
+터미널에서 켜 둔 스프링 서버 창과 ngrok 창을 Ctrl+C 로 끈 뒤, 프로젝트 폴더에서 한 번만 실행합니다.
+
+```bash
+sh deploy/mac/install.sh prelaunch-singing-placard.ngrok-free.dev   # 본인 ngrok 주소
+```
+
+- 로그인하면 서버와 ngrok 이 자동으로 켜지고, 꺼지면 10초 뒤 다시 켜집니다.
+- 전원이 연결돼 있으면 맥이 잠들지 않게 막습니다. **뚜껑을 닫으면 잠드니 열어 두세요.**
+- 재부팅 뒤에는 로그인해야 켜집니다. 시스템 설정 > 사용자 및 그룹 > 자동 로그인을 켜 두면 편합니다.
+- 새 버전으로 바꿀 때는 ZIP 을 다시 받아 같은 명령을 실행하면 됩니다. 키 파일은 유지됩니다.
+- 로그: `~/Library/Logs/kakao-news-bot/app.log`, `ngrok.log` / 끄기: `sh deploy/mac/uninstall.sh`
+
+### 방법 B. 리눅스 서버 (클라우드 VM 등)
+
+맥을 끄고도 돌리려면 항상 켜져 있는 서버가 필요합니다. 오라클 클라우드 무료 VM 같은 곳에
+Java 21 과 ngrok 을 설치하고 아래처럼 systemd 로 등록합니다.
 
 ```bash
 ./mvnw package
 sudo useradd -r -s /usr/sbin/nologin newsbot
 sudo mkdir -p /opt/kakao-news-bot/data
 sudo cp target/kakao-news-bot-0.1.0.jar /opt/kakao-news-bot/kakao-news-bot.jar
-sudo cp deploy/newsbot.env.example /opt/kakao-news-bot/newsbot.env   # 값 채우기
-sudo chmod 600 /opt/kakao-news-bot/newsbot.env
+sudo cp secrets.properties /opt/kakao-news-bot/            # 제미나이 키
+sudo cp deploy/newsbot.env.example /opt/kakao-news-bot/newsbot.env
+sudo chmod 600 /opt/kakao-news-bot/secrets.properties /opt/kakao-news-bot/newsbot.env
 sudo chown -R newsbot: /opt/kakao-news-bot
 sudo cp deploy/kakao-news-bot.service /etc/systemd/system/
 sudo systemctl enable --now kakao-news-bot
 journalctl -u kakao-news-bot -f
 ```
 
-**서버에서 카카오 계정 연결하기.** 앱은 기본적으로 `127.0.0.1` 에서만 접속을 받으므로 포트를 외부에 열 필요가 없습니다.
-내 PC에서 SSH 터널을 연 뒤, 2-3과 같은 주소를 내 PC 브라우저로 열면 됩니다.
-
-```bash
-ssh -L 8080:localhost:8080 사용자@서버주소
-# 이제 내 PC 브라우저에서 http://localhost:8080/kakao/login?token=...
-```
-
-리다이렉트 URI가 `http://localhost:8080/kakao/callback` 그대로라서 카카오 설정을 바꿀 필요도 없습니다.
-
----
+ngrok 도 같은 방식으로 `ngrok http --url=https://<주소> 8080` 을 systemd 서비스로 등록하거나
+`ngrok service install` 을 쓰면 됩니다.
 
 ## 6. 문제 해결
 
