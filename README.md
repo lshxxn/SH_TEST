@@ -212,27 +212,41 @@ sh deploy/mac/install.sh prelaunch-singing-placard.ngrok-free.dev   # 본인 ngr
 - 새 버전으로 바꿀 때는 ZIP 을 다시 받아 같은 명령을 실행하면 됩니다. 키 파일은 유지됩니다.
 - 로그: `~/Library/Logs/kakao-news-bot/app.log`, `ngrok.log` / 끄기: `sh deploy/mac/uninstall.sh`
 
-### 방법 B. 리눅스 서버 (클라우드 VM 등)
+### 방법 B. 오라클 클라우드 평생 무료 서버 (맥을 꺼도 동작)
 
-맥을 끄고도 돌리려면 항상 켜져 있는 서버가 필요합니다. 오라클 클라우드 무료 VM 같은 곳에
-Java 21 과 ngrok 을 설치하고 아래처럼 systemd 로 등록합니다.
+오라클 클라우드 Always Free 의 `VM.Standard.E2.1.Micro`(1GB) 서버에 설치합니다. 설치는 한 줄입니다.
 
-```bash
-./mvnw package
-sudo useradd -r -s /usr/sbin/nologin newsbot
-sudo mkdir -p /opt/kakao-news-bot/data
-sudo cp target/kakao-news-bot-0.1.0.jar /opt/kakao-news-bot/kakao-news-bot.jar
-sudo cp secrets.properties /opt/kakao-news-bot/            # 제미나이 키
-sudo cp deploy/newsbot.env.example /opt/kakao-news-bot/newsbot.env
-sudo chmod 600 /opt/kakao-news-bot/secrets.properties /opt/kakao-news-bot/newsbot.env
-sudo chown -R newsbot: /opt/kakao-news-bot
-sudo cp deploy/kakao-news-bot.service /etc/systemd/system/
-sudo systemctl enable --now kakao-news-bot
-journalctl -u kakao-news-bot -f
-```
+1. https://cloud.oracle.com 가입 (홈 리전 **South Korea Central (Seoul)** 권장. 카드 확인만 하고 청구는 없음)
+2. Compute > Instances > Create instance: 이미지 **Canonical Ubuntu 24.04**, 셰이프 **VM.Standard.E2.1.Micro (Always Free-eligible)**,
+   SSH 키 **Generate a key pair for me → Download private key**. 만들어지면 **Public IP** 복사
+3. 맥 터미널에서 접속 후 설치
+   ```bash
+   chmod 400 ~/Downloads/ssh-key-*.key
+   ssh -i ~/Downloads/ssh-key-*.key ubuntu@<Public IP>
+   # 서버 안에서
+   curl -fsSLo install.sh https://raw.githubusercontent.com/lshxxn/SH_TEST/claude/kakao-news-bot/deploy/oracle/install.sh
+   sudo sh install.sh
+   ```
+   ngrok 토큰, ngrok 고정 주소, 제미나이 키를 물어봅니다. 끝나면 `=====` 상자에 결과가 나옵니다.
+4. **먼저 맥에서 돌던 ngrok 을 끄세요.** 무료 ngrok 은 동시에 하나만 켤 수 있습니다. (`sh deploy/mac/uninstall.sh` 또는 창에서 Ctrl+C)
+5. 카카오 챗봇 관리자센터는 바꿀 것이 없습니다 (ngrok 주소 동일).
 
-ngrok 도 같은 방식으로 `ngrok http --url=https://<주소> 8080` 을 systemd 서비스로 등록하거나
-`ngrok service install` 을 쓰면 됩니다.
+설치 스크립트가 하는 일: Java 21·ngrok 설치, 스왑 1GB, 실행 파일 내려받기(GitHub Release), systemd 서비스 등록(부팅 시 자동 시작, 죽으면 10초 뒤 재시작),
+매일 05:17 자동 업데이트, 오라클 유휴 회수 방지(매시간 5분 CPU 사용, 선택).
+
+| 할 일 | 명령 (서버에 ssh 접속 후) |
+|---|---|
+| 상태 | `sudo systemctl status kakao-news-bot kakao-news-bot-ngrok` |
+| 로그 | `sudo journalctl -u kakao-news-bot -f` |
+| 지금 업데이트 | `sudo /opt/kakao-news-bot/update.sh` |
+| 제미나이 키 변경 | `sudo nano /opt/kakao-news-bot/secrets.properties` 후 `sudo systemctl restart kakao-news-bot` |
+| 설정 다시 입력 | `sudo sh install.sh` 다시 실행 (Enter 로 이전 값 유지) |
+
+평생 무료를 유지하려면
+- Always Free 한도 안의 자원만 쓰세요 (Micro 서버 2대까지). 다른 유료 자원을 만들지 않으면 청구가 없습니다.
+- 오라클은 7일 동안 CPU·네트워크 사용이 거의 없는 무료 서버를 회수할 수 있습니다. 설치 때 켜는 유휴 회수 방지 작업이 이를 막습니다.
+  더 확실한 방법은 계정을 Pay As You Go 로 올리는 것입니다 (한도 안에서는 그대로 무료, 회수 대상 제외). 올린다면 예산 알림을 꼭 설정하세요.
+- 서버 생성 시 "Out of capacity" 가 나오면 시간을 두고 다시 시도하거나 다른 가용 도메인(AD)을 고르세요.
 
 ## 6. 문제 해결
 
