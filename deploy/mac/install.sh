@@ -2,6 +2,7 @@
 # 맥에서 뉴스 챗봇 서버와 ngrok 을 "항상 켜진 상태"로 만듭니다.
 #   - 로그인하면 자동으로 켜지고, 꺼지면 10초 뒤 다시 켜집니다 (launchd)
 #   - 전원이 연결돼 있으면 맥이 잠들지 않게 막습니다 (caffeinate)
+#   - 뚜껑을 닫아도 잠들지 않게 설정합니다 (pmset disablesleep, 관리자 비밀번호 필요, 선택)
 # 실행:  sh deploy/mac/install.sh [ngrok주소]
 # 다시 실행하면 새 버전으로 교체됩니다. 끄려면 sh deploy/mac/uninstall.sh
 set -eu
@@ -139,6 +140,23 @@ if [ -n "$DRY_RUN" ]; then
   exit 0
 fi
 
+# 6-1. 뚜껑을 닫아도 잠들지 않게 (선택). 맥 관리자 비밀번호를 한 번 묻습니다.
+LID="${LID:-}"
+if [ -z "$LID" ]; then
+  printf '맥 뚜껑을 닫아도 서버가 계속 돌게 할까요? 관리자 비밀번호가 필요합니다 [Y/n]: '
+  read -r LID
+fi
+case "$LID" in n|N|no|NO|아니오) LID=no ;; *) LID=yes ;; esac
+if [ "$LID" = yes ]; then
+  say "뚜껑을 닫아도 잠들지 않도록 설정합니다. 비밀번호를 입력하세요 (입력해도 화면에 안 보입니다)."
+  if sudo pmset -a disablesleep 1 && sudo pmset -c sleep 0; then
+    touch "$APP_DIR/pmset-changed"
+  else
+    say "주의: 잠자기 설정을 바꾸지 못했습니다. 뚜껑을 열어 두고 쓰세요."
+    LID=no
+  fi
+fi
+
 # 7. 켜기 (이미 켜져 있으면 내렸다가 다시)
 UID_NUM="$(id -u)"
 launchctl bootout "gui/$UID_NUM" "$APP_PLIST" 2>/dev/null || true
@@ -164,5 +182,10 @@ say "  - AI 대화 스킬  https://$NGROK_DOMAIN/kakao/skill/chat"
 if [ -n "$TUNNEL" ]; then say "  - ngrok 터널    연결됨 ($TUNNEL)"; else say "  - ngrok 터널    아직 확인 안 됨 → $LOG_DIR/ngrok.log"; fi
 say "  - 로그 보기     tail -f \"$LOG_DIR/app.log\""
 say "  - 끄기          sh deploy/mac/uninstall.sh"
-say "  주의: 맥이 잠들면 챗봇도 멈춥니다. 전원을 연결해 두고 뚜껑을 닫지 마세요."
+if [ "$LID" = yes ]; then
+  say "  - 잠자기        꺼짐. 전원을 연결해 두면 뚜껑을 닫아도 계속 돕니다 (열이 빠지게 두세요)."
+  say "                  전원을 뽑으면 배터리가 빨리 닳으니, 들고 나갈 때는 sh deploy/mac/uninstall.sh 로 되돌리세요."
+else
+  say "  주의: 맥이 잠들면 챗봇도 멈춥니다. 전원을 연결해 두고 뚜껑을 닫지 마세요."
+fi
 say "============================================================"
