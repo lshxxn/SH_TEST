@@ -214,9 +214,10 @@ sh deploy/mac/install.sh prelaunch-singing-placard.ngrok-free.dev   # 본인 ngr
 - 새 버전으로 바꿀 때는 ZIP 을 다시 받아 같은 명령을 실행하면 됩니다. 키 파일은 유지됩니다.
 - 로그: `~/Library/Logs/kakao-news-bot/app.log`, `ngrok.log` / 끄기: `sh deploy/mac/uninstall.sh`
 
-### 방법 B. 오라클 클라우드 평생 무료 서버 (맥을 꺼도 동작)
+### 방법 B. 클라우드 리눅스 서버 (오라클 평생 무료, GCP 등. 맥을 꺼도 동작)
 
-오라클 클라우드 Always Free 의 `VM.Standard.E2.1.Micro`(1GB) 서버에 설치합니다. 설치는 한 줄입니다.
+Ubuntu/Debian 서버라면 어디든 같은 방법입니다. 오라클 Always Free `VM.Standard.E2.1.Micro`(1GB), GCP `e2-micro`(미국 리전 무료) 모두 됩니다.
+이미 쓰는 GCP 서버가 있다면 1~2단계는 건너뛰고 그 서버의 SSH 창에서 3단계만 실행하세요.
 
 1. https://cloud.oracle.com 가입 (홈 리전 **South Korea Central (Seoul)** 권장. 카드 확인만 하고 청구는 없음)
 2. Compute > Instances > Create instance: 이미지 **Canonical Ubuntu 24.04**, 셰이프 **VM.Standard.E2.1.Micro (Always Free-eligible)**,

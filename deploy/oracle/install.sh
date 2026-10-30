@@ -1,5 +1,5 @@
 #!/bin/sh
-# 오라클 클라우드 평생 무료 서버(Ubuntu)에 뉴스 챗봇을 설치합니다. 한 번만 실행하면 됩니다.
+# 리눅스 서버(오라클 클라우드, GCP 등 Ubuntu/Debian)에 뉴스 챗봇을 설치합니다. 한 번만 실행하면 됩니다.
 #
 #   curl -fsSLo install.sh https://raw.githubusercontent.com/lshxxn/SH_TEST/claude/kakao-news-bot/deploy/oracle/install.sh
 #   sudo sh install.sh
@@ -40,7 +40,19 @@ if [ -z "$DRY_RUN" ]; then
   export DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a
   say "[1/6] Java 21 과 ngrok 을 설치합니다..."
   apt-get update -qq
-  apt-get install -y -qq ca-certificates curl gnupg openjdk-21-jre-headless >/dev/null
+  apt-get install -y -qq ca-certificates curl gnupg >/dev/null
+  # Java 21: 배포판 패키지가 있으면 그것을, 없으면(예: Debian 12) Adoptium 저장소의 Temurin 21 을 설치
+  if ! java -version 2>&1 | grep -qE 'version "(2[1-9]|[3-9][0-9])'; then
+    if ! apt-get install -y -qq openjdk-21-jre-headless >/dev/null 2>&1; then
+      say "배포판에 Java 21 패키지가 없어 Adoptium(Temurin 21) 저장소를 추가합니다..."
+      install -d -m 755 /etc/apt/keyrings
+      curl -fsSL https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor -o /etc/apt/keyrings/adoptium.gpg
+      CODENAME="$(. /etc/os-release && echo "${VERSION_CODENAME:-bookworm}")"
+      echo "deb [signed-by=/etc/apt/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb $CODENAME main" > /etc/apt/sources.list.d/adoptium.list
+      apt-get update -qq
+      apt-get install -y -qq temurin-21-jre >/dev/null || fail "Java 21 을 설치하지 못했습니다. 배포판 이름: $CODENAME"
+    fi
+  fi
   if ! command -v ngrok >/dev/null 2>&1; then
     install -d -m 755 /etc/apt/keyrings
     if curl -fsSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc | gpg --dearmor -o /etc/apt/keyrings/ngrok.gpg 2>/dev/null \
